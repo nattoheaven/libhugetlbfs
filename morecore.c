@@ -102,11 +102,15 @@ static void *hugetlbfs_morecore(ptrdiff_t increment)
 		/* map in (extend) more of the file at the end of our last map */
 		if (__hugetlb_opts.map_hugetlb && using_default_pagesize)
 			p = mmap(heapbase + mapsize, delta, PROT_READ|PROT_WRITE,
-				 mmap_hugetlb|MAP_ANONYMOUS|MAP_PRIVATE|mmap_reserve,
+				 mmap_hugetlb|MAP_ANONYMOUS|MAP_SHARED|mmap_reserve,
 				 heap_fd, mapsize);
-		else
+		else {
+			if (heap_fd != -1) {
+				posix_fallocate(heap_fd, mapsize, delta);
+			}
 			p = mmap(heapbase + mapsize, delta, PROT_READ|PROT_WRITE,
-				 MAP_PRIVATE|mmap_reserve, heap_fd, mapsize);
+				 MAP_SHARED|mmap_reserve, heap_fd, mapsize);
+		}
 
 		if (p == MAP_FAILED) {
 			WARNING("New heap segment map at %p failed: %s\n",

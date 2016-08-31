@@ -335,6 +335,10 @@ void hugetlbfs_setup_env()
 	__hugetlb_opts.morecore = getenv("HUGETLB_MORECORE");
 	__hugetlb_opts.heapbase = getenv("HUGETLB_MORECORE_HEAPBASE");
 
+	if (!__hugetlb_opts.morecore) {
+		__hugetlb_opts.morecore = "4096";
+	}
+
 	if (__hugetlb_opts.morecore)
 		__hugetlb_opts.thp_morecore =
 			(strcasecmp(__hugetlb_opts.morecore, "thp") == 0);
@@ -387,6 +391,8 @@ void hugetlbfs_setup_env()
 	env = getenv("HUGETLB_NO_RESERVE");
 	if (env && !strcasecmp(env, "yes"))
 		__hugetlb_opts.no_reserve = true;
+
+	__hugetlb_opts.normaltlb_path = getenv("HUGETLB_NORMALTLB_PATH");
 }
 
 void hugetlbfs_setup_kernel_page_size()
@@ -435,6 +441,7 @@ void hugetlbfs_check_safe_noreserve()
 
 void hugetlbfs_check_map_hugetlb()
 {
+	long hpage_size;
 /*
  * FIXME: MAP_HUGETLB has not been picked up by glibc so even though the
  * kernel may support it, without the userspace mmap flag it cannot be
@@ -450,6 +457,12 @@ void hugetlbfs_check_map_hugetlb()
 	if (hugetlbfs_test_feature(HUGETLB_FEATURE_MAP_HUGETLB) > 0) {
 		INFO("Kernel supports MAP_HUGETLB\n");
 		__hugetlb_opts.map_hugetlb = true;
+	}
+	if (__hugetlb_opts.morecore != NULL) {
+		hpage_size = parse_page_size(__hugetlb_opts.morecore);
+		if (hpage_size > 0 && hpage_size <= sysconf(_SC_PAGE_SIZE)) {
+			__hugetlb_opts.map_hugetlb = false;
+		}
 	}
 #endif
 }
@@ -990,7 +1003,7 @@ const char *hugetlbfs_find_path_for_size(long page_size)
 		if (strlen(path))
 			return path;
 	}
-	return NULL;
+	return __hugetlb_opts.normaltlb_path;
 }
 
 const char *hugetlbfs_find_path(void)
@@ -999,7 +1012,7 @@ const char *hugetlbfs_find_path(void)
 	if (hpage_size > 0)
 		return hugetlbfs_find_path_for_size(hpage_size);
 	else
-		return NULL;
+		return __hugetlb_opts.normaltlb_path;
 }
 
 int hugetlbfs_unlinked_fd_for_size(long page_size)

@@ -74,6 +74,7 @@ struct libhugeopts_t {
 	char		*def_page_size;
 	char		*morecore;
 	char		*heapbase;
+	char		*normaltlb_path;
 };
 
 /*

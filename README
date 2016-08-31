@@ -1,3 +1,15 @@
+libhugetlbfs for distributed shared memory
+
+This fork of libhugetlbfs is targeted for distributed shared memory.
+First, create a raid0 filesystem from memory disks of a  cluster. Then,
+set "HUGETLB_NORMALTLB_PATH" environment variable to the mounted raid0.
+Finally run a program with our libhugetlbfs.
+
+When you use static memory, you need to allocate swap memory as large as
+distributed shared memory.
+
+-- 
+
 03 December 2015 -- Yet another mailing list move
 
 librelist seems to be dead or at least broken.  I have recieved several

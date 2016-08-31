@@ -897,6 +897,9 @@ static int prepare_segment(struct seg_info *seg)
 	 */
 	INFO("Mapped hugeseg at %p. Copying %#0lx bytes and %#0lx extra bytes"
 		" from %p...", p, seg->filesz, seg->extrasz, seg->vaddr);
+	if (seg->fd != -1) {
+		posix_fallocate(seg->fd, 0, size);
+	}
 	memcpy(p + offset, seg->vaddr, seg->filesz + seg->extrasz);
 	INFO_CONT("done\n");
 
@@ -1110,6 +1113,7 @@ static void remap_segments(struct seg_info *seg, int num)
 	 * by another process.
 	 */
 	 p = mmap(0, 0, 0, 0, 0, 0);
+	 posix_fallocate(0, 0, 0);
 
 	/* This is the hairy bit, between unmap and remap we enter a
 	 * black hole.  We can't call anything which uses static data
@@ -1159,6 +1163,9 @@ static void remap_segments(struct seg_info *seg, int num)
 			unmapped_abort("Mapped hugepage segment %u (%p-%p) at "
 				       "wrong address %p\n", i, seg[i].vaddr,
 				       seg[i].vaddr+mapsize, p);
+		if (seg[i].fd != -1) {
+			posix_fallocate(seg[i].fd, 0, mapsize);
+		}
 	}
 	/* The segments are all back at this point.
 	 * and it should be safe to reference static data
